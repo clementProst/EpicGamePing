@@ -8,12 +8,12 @@ const fs = require('fs');
 var previousGame;
 
 const j = schedule.scheduleJob('30 0 16 * * *', function(){
-    ping(false);
+    ping(false, null);
 });
 
 bot.login(secrets.token);
 
-async function ping(override) {
+async function ping(override, servid) {
 	let response = await axios.get('https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=FR&country=FR').catch(console.error);
 	let jeu;
 	for (let freegame of response.data.data.Catalog.searchStore.elements)
@@ -43,29 +43,31 @@ async function ping(override) {
 		.setFooter("@TopMage");
     let serveurs = bot.guilds.cache.array();
     for (let serv of serveurs) {
-		let member = serv.members.cache.find(m => m.id === bot.user.id);
-		if (member && member.permissions.has([2048, 16, 268435456])) {
-			// Role
-			let role = serv.roles.cache.find(r => r.name === "Juifs");
-			if (role === undefined) {
-				role = await serv.roles.create({
-					data: {
-						name: 'Juifs',
-						color: 'YELLOW',
-						mentionable: true
-					},
-					reason: 'je veux des jeux gratuits',
+		if (override && serv.id === servid) {
+			let member = serv.members.cache.find(m => m.id === bot.user.id);
+			if (member && member.permissions.has([2048, 16, 268435456])) {
+				// Role
+				let role = serv.roles.cache.find(r => r.name === "Juifs");
+				if (role === undefined) {
+					role = await serv.roles.create({
+						data: {
+							name: 'Juifs',
+							color: 'YELLOW',
+							mentionable: true
+						},
+						reason: 'je veux des jeux gratuits',
+					});
+				}
+				fs.readFile('data/channels.json', 'utf8', (err, data) => {
+					if (err) throw err;
+					let json = JSON.parse(data);
+					if (json === {}) return;
+					let channel = serv.systemChannel;
+					if (json[serv.id]) channel = serv.channels.cache.get(json[serv.id]);
+
+					channel.send("<@&"+role.id+">", embed).catch(console.error);
 				});
 			}
-			fs.readFile('data/channels.json', 'utf8', (err, data) => {
-		        if (err) throw err;
-		        let json = JSON.parse(data);
-				if (json === {}) return;
-				let channel = serv.systemChannel;
-				if (json[serv.id]) channel = serv.channels.cache.get(json[serv.id]);
-
-				channel.send("<@&"+role.id+">", embed).catch(console.error);
-		    });
 		}
     }
 }
@@ -110,7 +112,7 @@ bot.on('message', msg => {
 		    });
 			break;
 		case "ping":
-			ping(true);
+			ping(true, msg.guild.id);
 			break;
 	}
 })
