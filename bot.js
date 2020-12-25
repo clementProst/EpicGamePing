@@ -8,12 +8,39 @@ const fs = require('fs');
 var previousGame;
 
 const j = schedule.scheduleJob('30 0 16 * * *', function(){
-    ping();
+    ping(false);
 });
 
 bot.login(secrets.token);
 
-async function ping() {
+async function ping(override) {
+	let response = await axios.get('https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=FR&country=FR').catch(console.error);
+	let jeu;
+	for (let freegame of response.data.data.Catalog.searchStore.elements)
+		if (freegame.promotions.promotionalOffers.length) { jeu = freegame; break; }
+	if ((!jeu || jeu.title === previousGame) && !override) return;
+	previousGame = jeu.title;
+	for (let element of jeu.customAttributes) {
+		if (element.key === "com.epicgames.app.productSlug")
+			jeu.url = element.value;
+		if (element.key === "publisherName")
+			jeu.publisher = element.value;
+	}
+	// Couleur du embed
+	const ctx = createCanvas(1920, 1080).getContext("2d");
+	const img = await loadImage(jeu.keyImages[1].url).catch(console.error);;
+	ctx.drawImage(img, 0, 0);
+	let pixel = ctx.getImageData(0, 1079, 1, 1).data;
+	let hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+	const embed = new Discord.MessageEmbed()
+		.setColor(hex)
+		.setTitle("Nouveau jeu gratuit !")
+		.setDescription("Le jeu " + jeu.title + " vient de passer gratuit sur l'Epic Games Store !")
+		.setURL("https://www.epicgames.com/store/fr/product/" + jeu.url )
+		.setAuthor(jeu.publisher)
+		.setTimestamp()
+		.setImage(jeu.keyImages[1].url)
+		.setFooter("@TopMage");
     let serveurs = bot.guilds.cache.array();
     for (let serv of serveurs) {
 		let member = serv.members.cache.find(m => m.id === bot.user.id);
@@ -30,33 +57,6 @@ async function ping() {
 					reason: 'je veux des jeux gratuits',
 				});
 			}
-			let response = await axios.get('https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=FR&country=FR').catch(console.error);
-			let jeu;
-			for (let freegame of response.data.data.Catalog.searchStore.elements)
-				if (freegame.promotions.promotionalOffers.length) { jeu = freegame; break; }
-			if (!jeu || jeu.title === previousGame) return;
-			previousGame = jeu.title;
-			for (let element of jeu.customAttributes) {
-				if (element.key === "com.epicgames.app.productSlug")
-					jeu.url = element.value;
-				if (element.key === "publisherName")
-					jeu.publisher = element.value;
-			}
-			// Couleur du embed
-			const ctx = createCanvas(1920, 1080).getContext("2d");
-			const img = await loadImage(jeu.keyImages[1].url).catch(console.error);;
-			ctx.drawImage(img, 0, 0);
-			let pixel = ctx.getImageData(0, 1079, 1, 1).data;
-			let hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
-			const embed = new Discord.MessageEmbed()
-				.setColor(hex)
-				.setTitle("Nouveau jeu gratuit !")
-				.setDescription("Le jeu " + jeu.title + " vient de passer gratuit sur l'Epic Games Store !")
-				.setURL("https://www.epicgames.com/store/fr/product/" + jeu.url )
-				.setAuthor(jeu.publisher)
-				.setTimestamp()
-				.setImage(jeu.keyImages[1].url)
-				.setFooter("@TopMage");
 			fs.readFile('data/channels.json', 'utf8', (err, data) => {
 		        if (err) throw err;
 		        let json = JSON.parse(data);
@@ -110,7 +110,7 @@ bot.on('message', msg => {
 		    });
 			break;
 		case "ping":
-			ping();
+			ping(true);
 			break;
 	}
 })
