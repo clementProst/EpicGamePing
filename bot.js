@@ -16,8 +16,8 @@ bot.login(secrets.token);
 async function ping() {
     let serveurs = bot.guilds.cache.array();
     for (let serv of serveurs) {
-		let bot = serv.members.cache.find(m => m.id === bot.user.id);
-		if (bot && bot.permissions.has([2048, 16, 268435456])) {
+		let member = serv.members.cache.find(m => m.id === bot.user.id);
+		if (member && member.permissions.has([2048, 16, 268435456])) {
 			// Role
 			let role = serv.roles.cache.find(r => r.name === "Juifs");
 			if (role === undefined) {
@@ -108,6 +108,9 @@ bot.on('message', msg => {
 		            msg.reply("les annonces se feront désormais dans le salon <#" + salon.id + "> !").catch(console.error);
 		        });
 		    });
+			break;
+		case "ping":
+			ping();
 			break;
 	}
 })
