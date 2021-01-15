@@ -17,7 +17,7 @@ async function ping(override, servid) {
 	let response = await axios.get('https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=FR&country=FR').catch(console.error);
 	let jeu;
 	for (let freegame of response.data.data.Catalog.searchStore.elements)
-		if (freegame.promotions.promotionalOffers.length) { jeu = freegame; break; }
+		if (freegame.promotions.promotionalOffers && freegame.promotions.promotionalOffers.length) { jeu = freegame; break; }
 	if ((!jeu || jeu.title === previousGame) && !override) return;
 	previousGame = jeu.title;
 	for (let element of jeu.customAttributes) {
@@ -57,18 +57,15 @@ async function ping(override, servid) {
 					reason: 'je veux des jeux gratuits',
 				});
 			}
-			if (!override) {
-				fs.readFile('data/channels.json', 'utf8', (err, data) => {
-					if (err) throw err;
-					let json = JSON.parse(data);
-					if (json === {}) return;
-					let channel = serv.systemChannel;
-					if (json[serv.id]) channel = serv.channels.cache.get(json[serv.id]);
-
+			fs.readFile('data/channels.json', 'utf8', (err, data) => {
+				if (err) throw err;
+				let json = JSON.parse(data);
+				if (json === {}) return;
+				let channel = serv.systemChannel;
+				if (json[serv.id]) channel = serv.channels.cache.get(json[serv.id]);
+				if (!override || (override && serv.id === servid))
 					channel.send("<@&"+role.id+">", embed).catch(console.error);
-				});
-			} else if (serv.id === servid)
-				channel.send("<@&"+role.id+">", embed).catch(console.error);
+			});
 		}
     }
 }
