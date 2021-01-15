@@ -95,17 +95,17 @@ bot.on('message', msg => {
     if (!msg.member.permissions.has(8) && msg.author.id !== secrets.owner) { msg.reply("seul un administrateur peut utiliser cette commande.").catch(console.error); return; }
 
 	switch (primaryCommand) {
-		case "salon":
-			let salon = msg.mentions.channels.first();
-			if (!salon || (salon && salon.type !== "text")) { msg.reply("le salon est invalide.").catch(console.error); return; }
+		case "channel":
+			let channel = msg.mentions.channels.first();
+			if (!channel || (channel && channel.type !== "text")) { msg.reply("le salon est invalide.").catch(console.error); return; }
 			fs.readFile('data/channels.json', 'utf8', (err, data) => {
 		        if (err) throw err;
 		        if (data === "") data = "{}";
 		        let json = JSON.parse(data);
-		        json[msg.guild.id] = salon.id;
+		        json[msg.guild.id] = channel.id;
 		        fs.writeFile('data/channels.json', JSON.stringify(json), (err) => {
 		            if (err) throw err;
-		            msg.reply("les annonces se feront désormais dans le salon <#" + salon.id + "> !").catch(console.error);
+		            msg.reply("les annonces se feront désormais dans le salon <#" + channel.id + "> !").catch(console.error);
 		        });
 		    });
 			break;
