@@ -17,7 +17,7 @@ async function ping(override, servid) {
 	let response = await axios.get('https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=FR&country=FR').catch(console.error);
 	let jeu;
 	for (let freegame of response.data.data.Catalog.searchStore.elements)
-		if (freegame.promotions.promotionalOffers && freegame.promotions.promotionalOffers.length) { jeu = freegame; break; }
+		if (freegame && freegame.promotions && freegame.promotions.promotionalOffers && freegame.promotions.promotionalOffers.length) { jeu = freegame; break; }
 	if ((!jeu || jeu.title === previousGame) && !override) return;
 	previousGame = jeu.title;
 	for (let element of jeu.customAttributes) {
