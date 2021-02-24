@@ -5,7 +5,7 @@ const schedule = require('node-schedule');
 const { createCanvas, loadImage } = require('canvas');
 const secrets = require('./config/secrets');
 const fs = require('fs');
-var previousGame;
+const { debug } = require("console");
 
 const j = schedule.scheduleJob('30 0 16 * * *', function(){
     ping(false, null);
@@ -17,10 +17,9 @@ async function ping(override, servid) {
 	let response = await axios.get('https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=FR&country=FR').catch(console.error);
 	let jeu;
 	for (let freegame of response.data.data.Catalog.searchStore.elements) {
-		if (freegame && freegame.promotions && freegame.promotions.promotionalOffers && freegame.promotions.promotionalOffers.length) {
+		if (freegame && freegame.promotions && freegame.promotions.promotionalOffers && freegame.promotions.promotionalOffers[0] && freegame.promotions.promotionalOffers[0].promotionalOffers[0] && Math.abs((new Date(freegame.promotions.promotionalOffers[0].promotionalOffers[0].startDate)-new Date())/1000/60/60) < 6) {
 			jeu = freegame;
-			if ((jeu && jeu.title !== previousGame) || override) {
-				previousGame = jeu.title;
+			if (jeu || override) {
 				for (let element of jeu.customAttributes) {
 					if (element.key === "com.epicgames.app.productSlug")
 						jeu.url = element.value;
@@ -75,17 +74,8 @@ async function ping(override, servid) {
 }
 
 bot.on('ready', () => {
-    if (previousGame === undefined) {
-        axios.get('https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=FR&country=FR')
-            .then(async (res) => {
-                let jeu = null;
-                for (let freegame of res.data.data.Catalog.searchStore.elements)
-                if (freegame.promotions.promotionalOffers.length) { jeu = freegame; break; }
-                previousGame = jeu.title;
-				console.log("Previous game : " + previousGame);
-            }).catch(console.error);
-    }
-})
+    console.log("Bot online");
+});
 
 bot.on('message', msg => {
 	if (!msg.guild || !msg.content.startsWith(secrets.prefix)) return;
